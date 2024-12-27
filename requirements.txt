@@ -1,0 +1,5 @@
+gym[atari,accept-rom-license]
+gym[classic_control]
+gym[other]
+numpy==1.23.5
+torch
