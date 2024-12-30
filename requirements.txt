@@ -1,5 +1,6 @@
 gym[atari,accept-rom-license]
-gym[classic_control]
+gymnasium[classic_control]
 gym[other]
 numpy==1.23.5
-torch
+torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pillow

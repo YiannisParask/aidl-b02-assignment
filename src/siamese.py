@@ -3,13 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class EncoderModel(nn.Module):
-    def __init__(self, in_channels=4, input_size=(80, 80)):
+    def __init__(self, in_channels=3, input_size=(80, 80)):
         """
         Args:
-            in_channels: number of stacked frames (default=4).
+            in_channels: number of input channels (default=3).:
+                * 3 for RGB
+                * 1 for Grayscale
+                * 4 for 4 stacked Grayscale frames
+                * 12 for 4 stacked RGB frames
+            input_size: size of input image (default=(80, 80)).
         """
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=(3,3), stride=2, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, out_channels=32, kernel_size=(3,3), stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(3,3), stride=2, padding=1)
         self.pool = nn.MaxPool2d(kernel_size=(2,2))
         self.flatten = nn.Flatten()
@@ -41,7 +46,7 @@ class EncoderModel(nn.Module):
         
         
 class InverseModel(nn.Module):
-    def __init__(self, encoder_output_dim=400, num_actions=3):
+    def __init__(self, encoder_output_dim=400, num_actions=5):
         """
         Args:
             encoder_output_dim: Dimensionality of the encoder's output (default=400).
@@ -57,30 +62,6 @@ class InverseModel(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
-    
-class SiameseModel(nn.Module):
-    def __init__(self):
-        """
-        Args:
-            encoder: Encoder model.
-            inverse_model: Inverse model.
-        """
-        super(SiameseModel, self).__init__()
-        self.encoder = EncoderModel()
-        self.inverse_model = InverseModel()
-    
-    def forward(self, S_t, S_t_next):
-        # Pass both inputs through the encoder
-        encoded_S_t = self.encoder(S_t)
-        encoded_S_t_next = self.encoder(S_t_next)
-
-        # Concatenate the feature vectors
-        combined_features = torch.cat((encoded_S_t, encoded_S_t_next), dim=1)
-
-        # Pass concatenated features through the inverse model
-        logits = self.inverse_model(combined_features)
-        return logits
     
 
 def loss_function(logits, targets):
