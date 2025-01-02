@@ -4,3 +4,4 @@ gym[other]
 numpy==1.23.5
 torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pillow
+pyvirtualdisplay==0.2.*

@@ -39,9 +39,10 @@ class EncoderModel(nn.Module):
         Returns:
             output_dim: output dimension
         '''
-        dummy_input = torch.zeros(1, in_channels, *input_size)  # Batch size = 1
-        x = self.pool(F.relu(self.conv1(dummy_input)))  
-        x = self.pool(F.relu(self.conv2(x)))
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, in_channels, *input_size)  # Batch size = 1
+            x = self.pool(F.relu(self.conv1(dummy_input)))  
+            x = self.pool(F.relu(self.conv2(x)))
         return x.numel()
         
         
