@@ -1,166 +1,112 @@
 import random
-import numpy as np
 import torch
 import torch.optim as optim
-import torch.nn.functional as F
 from simple_dqn import QNetwork
 from replay_buffer import ReplayBuffer
+import torch.nn as nn
 
 
 class Agent:
-    """Interacts with and learns from the environment."""
-
     def __init__(
         self,
         state_size,
         action_size,
-        seed,
         device,
-        lr,
-        buffer_size,
-        batch_size,
-        gamma,
-        tau,
-        update_every,
-        input_type="vector",
+        buffer_size=10000,
+        batch_size=64,
+        gamma=0.99,
+        lr=1e-4,
+        tau=1e-3,
+        epsilon_start=1.0,
+        epsilon_end=0.1,
+        epsilon_decay=0.995,
     ):
-        """
-        Initialize an Agent object.
-
-        Args:
-            state_size (int): dimension of each state
-            action_size (int): dimension of each action
-            seed (int): random seed
-            device (torch.device): device to use for computation
-            lr (float): learning rate
-            buffer_size (int): maximum size of replay buffer
-            batch_size (int): size of each training batch
-            gamma (float): discount factor
-            tau (float): soft update interpolation factor
-            update_every (int): how often to update the network
-        """
         self.state_size = state_size
         self.action_size = action_size
-        self.seed = random.seed(seed)
         self.device = device
         self.gamma = gamma
         self.tau = tau
-        self.update_every = update_every
-        self.input_type = input_type
+        self.epsilon = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.epsilon_decay = epsilon_decay
 
-        if input_type == "image":
-            self.qnetwork_local = QNetwork(
-                action_size=action_size, seed=seed
-            ).to(device)
-            self.qnetwork_target = QNetwork(
-                action_size=action_size, seed=seed
-            ).to(device)
-        elif input_type == "vector":
-            self.qnetwork_local = QNetwork(
-                state_size=state_size, action_size=action_size, seed=seed
-            ).to(device)
-            self.qnetwork_target = QNetwork(
-                state_size=state_size, action_size=action_size, seed=seed
-            ).to(device)
-        else:
-            raise ValueError("Invalid input_type. Must be 'vector' or 'image'.")
+        # Initialize Q-network and target network
+        self.q_network = QNetwork(action_size).to(device)
+        self.target_network = QNetwork(action_size).to(device)
+        self.target_network.load_state_dict(self.q_network.state_dict())
+        self.target_network.eval()
+
+        # Replay buffer
+        self.replay_buffer = ReplayBuffer(buffer_size, batch_size, device)
+
+        # Optimizer
+        self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
+
+    def act(self, state, training=True):
+        '''
+        Select an action based on the current state.
         
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=lr)
-
-        # Replay memory
-        self.memory = ReplayBuffer(action_size, buffer_size, batch_size, seed, device)
-
-        # Initialize time step (for updating every UPDATE_EVERY steps)
-        self.t_step = 0
+        Args:
+            state (np.array): Current state of the environment.
+            training (bool): Whether the agent is training or not.
+        Returns:
+            action (int): Action to take.
+        '''
+        if training and random.random() < self.epsilon:
+            return random.randint(0, self.action_size - 1)
+        else:
+            state_tensor = (
+                torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
+            )
+            with torch.no_grad():
+                return torch.argmax(self.q_network(state_tensor)).item()
 
     def step(self, state, action, reward, next_state, done):
-        """
-        Save experience in replay memory and learn if enough samples are available.
-
-        Args:
-            state (array_like): current state
-            action (int): action taken
-            reward (float): reward received
-            next_state (array_like): next state
-            done (bool): whether the episode is done
-        """
-        self.memory.add(state, action, reward, next_state, done)
-
-        # Learn every UPDATE_EVERY time steps
-        self.t_step = (self.t_step + 1) % self.update_every
-        if self.t_step == 0:
-            if len(self.memory) > self.memory.batch_size:
-                experiences = self.memory.sample()
-                self.learn(experiences)
-
-    def act(self, state, eps=0.0):
-        """
-        Returns actions for given state as per current policy.
-
-        Args:
-            state (array_like): current state
-            eps (float): epsilon, for epsilon-greedy action selection
-        """
-        if not isinstance(state, torch.Tensor):
-            state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
-        else:
-            state = state.unsqueeze(0).to(self.device)
-            
-        self.qnetwork_local.eval()
+        '''
+        Perform a single step of learning.
         
-        with torch.no_grad():
-            action_values = self.qnetwork_local(state)
-        self.qnetwork_local.train()
-
-        # Epsilon-greedy action selection
-        if random.random() > eps:
-            return np.argmax(action_values.cpu().data.numpy())
-        else:
-            return random.choice(np.arange(self.action_size))
-
-    def learn(self, experiences):
-        """
-        Update value parameters using given batch of experience tuples.
-
         Args:
-            experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples
-        """
-        states, actions, rewards, next_states, dones = experiences
+            state (np.array): Current state of the environment.
+            action (int): Action taken in the current state.
+            reward (float): Reward received after taking the action.
+            next_state (np.array): State of the environment after taking the action.
+            done (bool): Whether the episode has ended
+        '''
+        self.replay_buffer.add((state, action, reward, next_state, done))
+        if len(self.replay_buffer) >= self.replay_buffer.batch_size:
+            self.learn()
+        self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
 
-        # Get max predicted Q values (for next states) from target model
-        Q_targets_next = (
-            self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        )
-        # Compute Q targets for current states
-        Q_targets = rewards + (self.gamma * Q_targets_next * (1 - dones))
+    def learn(self):
+        '''
+        Perform a single step of learning.
+        '''
+        states, actions, rewards, next_states, dones = self.replay_buffer.sample()
+        q_values = self.q_network(states).gather(1, actions.unsqueeze(1)).squeeze()
+        with torch.no_grad():
+            next_q_values = self.target_network(next_states).max(1)[0]
+            targets = rewards + (self.gamma * next_q_values * (1 - dones))
 
-        # Get expected Q values from local model
-        Q_expected = self.qnetwork_local(states).gather(1, actions)
-
-        # Compute loss
-        loss = F.mse_loss(Q_expected, Q_targets)
+        loss = nn.MSELoss()(q_values, targets)
         self.optimizer.zero_grad()
         loss.backward()
-
-        # Gradient clipping (optional)
-        torch.nn.utils.clip_grad_norm_(self.qnetwork_local.parameters(), max_norm=1.0)
+        nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=1.0)
         self.optimizer.step()
 
-        # Update target network
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
+        self.soft_update(self.q_network, self.target_network)
 
-    def soft_update(self, local_model, target_model, tau):
+    def soft_update(self, source_model, target_model):
         """
-        Soft update model parameters. θ_target = τ*θ_local + (1 - τ)*θ_target
-
+        Perform a soft update of the target network parameters.
+        (θ_target = τ*θ_local + (1 - τ)*θ_target)
         Args:
-            local_model (PyTorch model): weights will be copied from
-            target_model (PyTorch model): weights will be copied to
-            tau (float): interpolation parameter
+            target_model (torch.nn.Module): Target network.
+            source_model (torch.nn.Module): Online (current) network.
+            tau (float): Interpolation parameter (0 < tau <= 1).
         """
-        for target_param, local_param in zip(
-            target_model.parameters(), local_model.parameters()
+        for target_param, source_param in zip(
+            target_model.parameters(), source_model.parameters()
         ):
             target_param.data.copy_(
-                tau * local_param.data + (1.0 - tau) * target_param.data
+                self.tau * source_param.data + (1.0 - self.tau) * target_param.data
             )

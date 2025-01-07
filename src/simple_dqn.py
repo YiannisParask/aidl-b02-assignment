@@ -2,14 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+# reference https://medium.com/@hkabhi916/mastering-convolutional-deep-q-learning-with-pytorch-a-comprehensive-guide-0114742a0a62
 class QNetwork(nn.Module):
     """Actor (Policy) Model for image-based input."""
 
-    def __init__(self, action_size, seed, in_channels=4, input_size=(80, 80)):
+    def __init__(self, action_size, in_channels=4, input_size=(80, 80)):
         """Initialize parameters and build model."""
         super(QNetwork, self).__init__()
-        self.seed = torch.manual_seed(seed)
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
@@ -30,6 +29,7 @@ class QNetwork(nn.Module):
     def _compute_output_dim(self, in_channels, input_size):
         """
         Compute the output dimension after passing through the conv layers
+        
         Args:
             in_channels: number of stacked frames
             input_size: size of input image

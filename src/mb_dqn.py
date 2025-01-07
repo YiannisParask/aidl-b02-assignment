@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# Encoder Model (Pretrained Network)
 class EncoderModel(nn.Module):
     def __init__(self, pretrained_path):
         super(EncoderModel, self).__init__()
@@ -55,7 +54,7 @@ class DQNModel(nn.Module):
             nn.LayerNorm(state_dim),
             nn.Linear(state_dim, 128),
             nn.ReLU(),
-            nn.Linear(128, num_actions),  # Output Q-values
+            nn.Linear(128, num_actions), 
         )
 
     def forward(self, x):
