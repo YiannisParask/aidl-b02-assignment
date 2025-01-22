@@ -1,2 +1,16 @@
-80*80*1
-all ways keep same embedding size
+Next Steps
+===========
+- Check Reward Signal: Ensure the agent is rewarded for meaningful progress.
+- Experiment with Hyperparameters. Focus on: 
+    - learning rate, e.g.,lr=1e-5 or lr=5e-5
+    - gamma, e.g., 0.95, 0.98, or 0.99
+    - epsilon decay increase e.g., 0.999 or
+    - epsilon_start, increase e.g., 1.2
+- Adjust delta value of loss function. (done)
+- Add dropout layers
+- Add more convolutional layers or increase the number of filters and neurons.
+- Increase the update_every parameter or decrease the soft-update tau to make updates more gradual.
+
+Results
+========
+Changing delta in loss function doesnt improve training
