@@ -18,9 +18,13 @@ class ReplayBuffer:
         self.batch_size = batch_size
         self.device = device
 
-    def add(self, experience):
-        """Add a new experience to memory."""
-        self.buffer.append(experience)
+    def add(self, state, action, reward, next_state, done):
+        """
+        Add a new experience to memory.
+        """
+        self.buffer.append(
+            (state.cpu().numpy(), action, reward, next_state.cpu().numpy(), done)
+        )
 
     def sample(self):
         """
@@ -36,10 +40,14 @@ class ReplayBuffer:
         experiences = random.sample(self.buffer, k=self.batch_size)
         states, actions, rewards, next_states, dones = zip(*experiences)
         return (
-            torch.tensor(np.array(states), dtype=torch.float32).to(self.device),
+            torch.tensor(np.array(states), dtype=torch.float32)
+            .squeeze(1)
+            .to(self.device),
             torch.tensor(actions, dtype=torch.int64).to(self.device),
             torch.tensor(rewards, dtype=torch.float32).to(self.device),
-            torch.tensor(np.array(next_states), dtype=torch.float32).to(self.device),
+            torch.tensor(np.array(next_states), dtype=torch.float32)
+            .squeeze(1)
+            .to(self.device),
             torch.tensor(dones, dtype=torch.float32).to(self.device),
         )
 

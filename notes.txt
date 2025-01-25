@@ -3,8 +3,8 @@ Next Steps
 - Check Reward Signal: Ensure the agent is rewarded for meaningful progress.
 - Experiment with Hyperparameters. Focus on: 
     - learning rate, e.g.,lr=1e-5 or lr=5e-5
-    - gamma, e.g., 0.95, 0.98, or 0.99
-    - epsilon decay increase e.g., 0.999 or
+    - gamma, e.g., 0.95, 0.98, or default=0.99
+    - epsilon decay increase e.g., 0.999 or default=0.995
     - epsilon_start, increase e.g., 1.2
 - Adjust delta value of loss function. (done)
 - Add dropout layers
@@ -14,3 +14,5 @@ Next Steps
 Results
 ========
 Changing delta in loss function doesnt improve training
+changing decay doesnt change anything
+gamma changes nothing

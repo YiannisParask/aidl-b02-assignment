@@ -59,11 +59,9 @@ class Agent:
         if random.random() < epsilon:
             return random.randint(0, self.action_size - 1)
         else:
-            state_tensor = (
-                torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
-            )
+            state = state.to(self.device)
             with torch.no_grad():
-                return torch.argmax(self.q_network(state_tensor)).item()
+                return torch.argmax(self.q_network(state)).item()
 
     def step(self, state, action, reward, next_state, done):
         """
@@ -76,7 +74,7 @@ class Agent:
             next_state (np.array): State of the environment after taking the action.
             done (bool): Whether the episode has ended
         """
-        self.replay_buffer.add((state, action, reward, next_state, done))
+        self.replay_buffer.add(state, action, reward, next_state, done)
 
         self.t_step += 1
 
@@ -101,7 +99,8 @@ class Agent:
             targets = rewards + (self.gamma * next_q_values * (1 - dones))
 
         # if delta==1, it is equivalent to SmoothL1Loss
-        loss = nn.HuberLoss(reduction="mean", delta=1.0)(q_values, targets)
+        loss = nn.MSELoss()(q_values, targets)
+        # loss = nn.HuberLoss(reduction="mean", delta=1.0)(q_values, targets)
         self.optimizer.zero_grad()
         loss.backward()
 
