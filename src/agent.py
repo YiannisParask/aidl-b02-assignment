@@ -99,8 +99,8 @@ class Agent:
             targets = rewards + (self.gamma * next_q_values * (1 - dones))
 
         # if delta==1, it is equivalent to SmoothL1Loss
-        loss = nn.MSELoss()(q_values, targets)
-        # loss = nn.HuberLoss(reduction="mean", delta=1.0)(q_values, targets)
+        # loss = nn.MSELoss()(q_values, targets)
+        loss = nn.HuberLoss(reduction="mean", delta=1.0)(q_values, targets)
         self.optimizer.zero_grad()
         loss.backward()
 
