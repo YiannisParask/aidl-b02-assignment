@@ -18,7 +18,7 @@ class Agent:
         lr=1e-4,
         tau=1e-3,
         epsilon_start=1.0,
-        epsilon_end=0.1,
+        epsilon_end=0.01,
         epsilon_decay=0.995,
         update_every=4,
     ):
@@ -84,7 +84,7 @@ class Agent:
         ):
             self.learn()
 
-        self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+        # self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
 
     def learn(self):
         """
