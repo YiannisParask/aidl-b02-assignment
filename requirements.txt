@@ -1,9 +1,11 @@
+--index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://pypi.org/simple
 gym[atari,accept-rom-license]
 gymnasium[classic_control]
 gym[other]
 numpy==1.23.5
-torch --index-url https://download.pytorch.org/whl/cu121
-torchvision --index-url https://download.pytorch.org/whl/cu121
+torch
+torchvision
 pillow
 pyvirtualdisplay==0.2.*
 imageio

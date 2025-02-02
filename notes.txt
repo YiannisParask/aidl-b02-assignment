@@ -1,18 +1,19 @@
 Next Steps
 ===========
-- Check Reward Signal: Ensure the agent is rewarded for meaningful progress.
-- Experiment with Hyperparameters. Focus on: 
+- Experiment with Hyperparameters: 
     - learning rate, e.g.,lr=1e-5 or lr=5e-5
     - gamma, e.g., 0.95, 0.98, or default=0.99
     - epsilon decay increase e.g., 0.999 or default=0.995
     - epsilon_start, increase e.g., 1.2
 - Adjust delta value of loss function. (done)
-- Add dropout layers
-- Add more convolutional layers or increase the number of filters and neurons.
 - Increase the update_every parameter or decrease the soft-update tau to make updates more gradual.
 
-Results
-========
-Changing delta in loss function doesnt improve training
-changing decay doesnt change anything
-gamma changes nothing
+Hyperparameters
+===============
+- max_timesteps: Controls Episode Length (broke the plateau).
+- epsilon_decay: Controls how fast epsilon decays. Increase = More exploration. Decrease = Faster exploitation. Default is 0.995 (Balanced).
+- buffer_size: Stores more experiences. Default is 1e5
+- update_every: More frequent updates. Default is 4.
+- gamma:  It controls how much future rewards influence the present decision. Try 0,8-0,9 for short-term rewards. Default is 0.99.
+- tau: is used in soft updates of the target network. Controls how fast target network moves towards the online network. (Recommended 0.005 - 0.01) Default is 0.001 or 1e-3.
+- epsilon: Controls the exploration vs. exploitation trade-off in epsilon-greedy action selection.

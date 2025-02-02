@@ -12,6 +12,7 @@ class Agent:
         state_size,
         action_size,
         device,
+        seed,
         buffer_size=int(1e5),
         batch_size=64,
         gamma=0.99,
@@ -34,8 +35,8 @@ class Agent:
         self.t_step = 0
 
         # Initialize Q-network and target network
-        self.q_network = QNetwork(action_size).to(device)
-        self.target_network = QNetwork(action_size).to(device)
+        self.q_network = QNetwork(action_size, seed).to(device)
+        self.target_network = QNetwork(action_size, seed).to(device)
         self.target_network.load_state_dict(self.q_network.state_dict())
         self.target_network.eval()
 
