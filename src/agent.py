@@ -23,6 +23,24 @@ class Agent:
         epsilon_decay=0.995,
         update_every=4,
     ):
+        """
+        Initialize an Agent object.
+        Args:
+            state_size (int): Dimension of each state.
+            action_size (int): Dimension of each action.
+            device (torch.device): Device to run the agent on.
+            seed (int): Random seed.
+            buffer_size (int): Size of the replay buffer.
+            batch_size (int): Batch size for training.
+            gamma (float): Discount factor.
+            lr (float): Learning rate.
+            tau (float): Interpolation parameter (0 < tau <= 1).
+            epsilon_start (float): Initial exploration rate.
+            epsilon_end (float): Minimum exploration rate.
+            epsilon_decay (float): Rate at which the exploration rate decays.
+            update_every (int): How often to update the network.
+            t_step (int): Counter for updating the network.
+        """
         self.state_size = state_size
         self.action_size = action_size
         self.device = device
@@ -84,8 +102,6 @@ class Agent:
             and len(self.replay_buffer) >= self.replay_buffer.batch_size
         ):
             self.learn()
-
-        # self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
 
     def learn(self):
         """

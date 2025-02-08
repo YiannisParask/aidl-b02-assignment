@@ -1,19 +1,18 @@
 Next Steps
 ===========
-- Experiment with Hyperparameters: 
-    - learning rate, e.g.,lr=1e-5 or lr=5e-5
-    - gamma, e.g., 0.95, 0.98, or default=0.99
-    - epsilon decay increase e.g., 0.999 or default=0.995
-    - epsilon_start, increase e.g., 1.2
-- Adjust delta value of loss function. (done)
-- Increase the update_every parameter or decrease the soft-update tau to make updates more gradual.
+- Experiment with Hyperparameters 
+- Adjust delta value of loss function.
+- Add more conv layer.
 
 Hyperparameters
 ===============
 - max_timesteps: Controls Episode Length (broke the plateau).
-- epsilon_decay: Controls how fast epsilon decays. Increase = More exploration. Decrease = Faster exploitation. Default is 0.995 (Balanced).
+- epsilon: Controls the exploration vs. exploitation trade-off in epsilon-greedy action selection. Higher value → more initial exploration
+- epsilon_end: Lower value → more exploitation at convergence.
+- epsilon_decay: Controls how fast epsilon decays. Higher value (0.999) slows decay (more exploration), Lower value (0.99) speeds decay (faster exploitation). Default is 0.995 (Balanced).
 - buffer_size: Stores more experiences. Default is 1e5
 - update_every: More frequent updates. Default is 4.
-- gamma:  It controls how much future rewards influence the present decision. Try 0,8-0,9 for short-term rewards. Default is 0.99.
-- tau: is used in soft updates of the target network. Controls how fast target network moves towards the online network. (Recommended 0.005 - 0.01) Default is 0.001 or 1e-3.
-- epsilon: Controls the exploration vs. exploitation trade-off in epsilon-greedy action selection.
+- gamma:  It controls how much future rewards influence the present decision. Try 0,8-0,9 for short-term or 0.95 - 0.99 for long-term rewards. Default is 0.99.
+- tau: is used in soft updates of the target network. Controls how fast target network moves towards the online network. (Recommended 0.005 - 0.01) Default is 0.001 or 1e-3 (very slow but stable). Higher values make to target dqn copy the online. 
+
+above 10 is ok
