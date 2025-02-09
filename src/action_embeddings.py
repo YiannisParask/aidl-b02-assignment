@@ -2,14 +2,15 @@ import torch
 import torch.nn as nn
 import pickle
 
+
 class EncoderModel(nn.Module):
     def __init__(self, encoder_path):
         super(EncoderModel, self).__init__()
         self.encoder = torch.load(encoder_path)
-        
+
     def forward(self, stacked_frames):
         return self.encoder(stacked_frames)
-    
+
 
 class EmbeddingModel(nn.Module):
     def __init__(self, action_size, embedding_size):
@@ -30,6 +31,7 @@ class ForwardModel(nn.Module):
         self.fc2 = nn.Linear(128, 64)
         self.output_layer = nn.Linear(64, output_dim)
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, encoded_state, encoded_action):
         # Concatenate the encoded state and action
@@ -37,9 +39,10 @@ class ForwardModel(nn.Module):
         # Pass through dense layers
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
+        x = self.dropout(x)
         return self.output_layer(x)
 
-    
+
 def loss_function(predicted, actual):
     # RMSE Loss
     return torch.sqrt(torch.mean((predicted - actual) ** 2))

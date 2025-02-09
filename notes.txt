@@ -1,9 +1,5 @@
-Next Steps
-===========
-- Experiment with Hyperparameters 
-- Adjust delta value of loss function.
-- Add more conv layer.
-
+DQN
+===
 Hyperparameters
 ===============
 - max_timesteps: Controls Episode Length (broke the plateau).
@@ -15,4 +11,12 @@ Hyperparameters
 - gamma:  It controls how much future rewards influence the present decision. Try 0,8-0,9 for short-term or 0.95 - 0.99 for long-term rewards. Default is 0.99.
 - tau: is used in soft updates of the target network. Controls how fast target network moves towards the online network. (Recommended 0.005 - 0.01) Default is 0.001 or 1e-3 (very slow but stable). Higher values make to target dqn copy the online. 
 
-above 10 is ok
+ICM
+===
+Hyperparameters
+===============
+- encoder_dim: A larger encoder_dim allows the encoder to learn more complex state representations but increases computational cost. A smaller encoder_dim reduces model size but might lead to a loss of important information. Common Values: 256, 400, 512
+- embedding_size: A larger embedding_size allows more expressiveness but can lead to overfitting. A smaller embedding_size may not capture enough information about actions. Common Values: 16, 32, 50, 128
+- input_dim = encoder_dim + embedding_size. It's the concatenated feature size from the encoder and action embedding.
+- output_dim = encoder_dim. It's The size of the predicted next-state embedding.
+- Beta (Weight for Siamese vs. Action Loss): Controls balance between forward (state prediction) and inverse (action prediction) losses. Increase if the forward model struggles; decrease if the inverse model struggles.
