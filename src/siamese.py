@@ -19,19 +19,25 @@ class EncoderModel(nn.Module):
             in_channels, out_channels=32, kernel_size=(3, 3), stride=2, padding=1
         )
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(3, 3), stride=2, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=(3, 3), stride=2, padding=1)
         self.pool = nn.MaxPool2d(kernel_size=(2, 2))
         self.flatten = nn.Flatten()
         self.output_dim = self._compute_output_dim(in_channels, input_size)
         self.fc = nn.Linear(self.output_dim, 400)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = self.pool(x)
+        x = self.dropout(x)
         x = F.relu(self.conv2(x))
         x = self.pool(x)
+        x = self.dropout(x)
+        x = F.relu(self.conv3(x))
+        x = self.pool(x)
+        x = self.dropout(x)
         x = self.flatten(x)
-        x = self.dropout(self.fc(x))
+        x = self.fc(x)
         return x
 
     def _compute_output_dim(self, in_channels, input_size):
@@ -47,6 +53,7 @@ class EncoderModel(nn.Module):
             dummy_input = torch.zeros(1, in_channels, *input_size)  # Batch size = 1
             x = self.pool(F.relu(self.conv1(dummy_input)))
             x = self.pool(F.relu(self.conv2(x)))
+            x = self.pool(F.relu(self.conv3(x)))
         return x.numel()
 
 
@@ -61,23 +68,8 @@ class InverseModel(nn.Module):
         self.fc1 = nn.Linear(encoder_dim * 2, 256)
         self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, num_actions)
-        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-        x = self.dropout(F.relu(self.fc2(x)))
+        x = F.relu(self.fc2(x))
         return self.fc3(x)
-
-
-def loss_function(logits, targets):
-    """
-    Compute the cross entropy loss between the predicted logits and the target labels.
-    Args:
-        logits: predicted logits from the model
-        targets: target labels
-        Returns:
-        loss: computed loss
-    """
-    # Cross Entropy Loss combines LogSoftmax and NLLLoss
-    # categorical cross entropy or negative log likelihood as a loss function
-    return nn.CrossEntropyLoss()(logits, targets)
