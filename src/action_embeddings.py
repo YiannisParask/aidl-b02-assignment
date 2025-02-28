@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import pickle
 
 
 class EncoderModel(nn.Module):
@@ -40,3 +41,15 @@ class ForwardModel(nn.Module):
         x = self.relu(self.fc2(x))
         x = self.dropout(x)
         return self.output_layer(x)
+
+
+def RMSE_loss_function(predicted, actual):
+    # RMSE Loss
+    return torch.sqrt(torch.mean((predicted - actual) ** 2))
+
+
+def store_embeddings(embedding_model, filename):
+    # Save the embedding weights
+    embeddings = embedding_model.embedding.weight.data.cpu().numpy()
+    with open(filename, "wb") as f:
+        pickle.dump(embeddings, f)

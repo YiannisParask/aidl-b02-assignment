@@ -73,3 +73,16 @@ class InverseModel(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return self.fc3(x)
+
+
+def cross_entropy_loss_function(logits, targets):
+    """
+    Compute the cross entropy loss between the predicted logits and the target labels.
+    Args:
+        logits: predicted logits from the model
+        targets: target labels
+        Returns:
+        loss: computed loss
+    """
+    # Cross Entropy Loss combines LogSoftmax and NLLLoss
+    return nn.CrossEntropyLoss()(logits, targets)

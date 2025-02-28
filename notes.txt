@@ -20,3 +20,4 @@ Hyperparameters
 - input_dim = encoder_dim + embedding_size. It's the concatenated feature size from the encoder and action embedding.
 - output_dim = encoder_dim. It's The size of the predicted next-state embedding.
 - Beta (Weight for Siamese vs. Action Loss): Controls balance between forward (state prediction) and inverse (action prediction) losses. Increase if the forward model struggles; decrease if the inverse model struggles.
+
