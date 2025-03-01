@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 import pickle
+from siamese import EncoderModel as PretrainedEncoderModel
 
 
 class EncoderModel(nn.Module):
     def __init__(self, pretrained_path):
         super(EncoderModel, self).__init__()
-        self.encoder = torch.load(pretrained_path, weights_only=True)
+        self.encoder = PretrainedEncoderModel()
+        self.encoder.load_state_dict(torch.load(pretrained_path))
+        self.encoder.eval()
 
     def forward(self, x):
         encoded_state = self.encoder(x)
@@ -23,15 +26,30 @@ class MHCAModel(nn.Module):
         )
 
     def forward(self, encoded_state, action_embeddings):
-        # Project state and actions
-        projected_state = self.state_projection(encoded_state.unsqueeze(1))
-        projected_actions = self.action_projection(action_embeddings)
+        # encoded_state shape: (batch_size, state_dim) => (64, 400)
+        # action_embeddings shape: (num_actions, embedding_dim) => (5, 50)
 
-        # Compute attention
+        # Convert encoded_state to (batch_size, 1, state_dim)
+        projected_state = self.state_projection(
+            encoded_state.unsqueeze(1)
+        )  # => (64, 1, 400)
+
+        # Expand action embeddings to (batch_size, num_actions, embedding_dim)
+        if action_embeddings.dim() == 2:
+            action_embeddings = action_embeddings.unsqueeze(0)  # => (1, 5, 50)
+        action_embeddings = action_embeddings.expand(
+            projected_state.size(0), -1, -1
+        )  # => (64, 5, 50)
+
+        # Project to (batch_size, num_actions, state_dim)
+        projected_actions = self.action_projection(action_embeddings)  # => (64, 5, 400)
+
+        # Multi-head attention expects: (batch_size, seq_len, embed_dim)
         fused_features, _ = self.attention(
             projected_state, projected_actions, projected_actions
         )
-        return fused_features.squeeze(1)
+
+        return fused_features.squeeze(1)  # => (64, 400)
 
 
 class DQNModel(nn.Module):
@@ -46,9 +64,7 @@ class DQNModel(nn.Module):
     ):
         super(DQNModel, self).__init__()
         self.encoder = EncoderModel(encoder_path)
-        self.action_embeddings = nn.Parameter(
-            action_embeddings
-        )  # Learnable action embeddings
+        self.action_embeddings = nn.Parameter(action_embeddings)
         self.mhca = MHCAModel(state_dim, action_dim, num_heads)
         self.fc = nn.Sequential(
             nn.LayerNorm(state_dim),
@@ -77,22 +93,3 @@ def load_action_embeddings(filename):
     with open(filename, "rb") as f:
         embeddings = pickle.load(f)
     return torch.tensor(embeddings, dtype=torch.float32)
-
-
-def q_loss(q_values, rewards, next_q_values, dones, gamma=0.99):
-    """
-    Compute the Q-learning loss.
-
-    Args:
-        q_values (torch.Tensor): Q-values predicted by the model.
-        actions (torch.Tensor): Actions taken by the agent.
-        rewards (torch.Tensor): Rewards received after taking the actions.
-        next_q_values (torch.Tensor): Q-values predicted by the target model.
-        dones (torch.Tensor): Whether the episode has terminated.
-        gamma (float): Discount factor.
-
-    Returns:
-        torch.Tensor: Q-learning loss.
-    """
-    target_q_values = rewards + gamma * next_q_values * (1 - dones)
-    return nn.HuberLoss(delta=1.0)(q_values, target_q_values)

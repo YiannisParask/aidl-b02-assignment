@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 import pickle
+from siamese import EncoderModel as PretrainedEncoderModel
 
 
 class EncoderModel(nn.Module):
     def __init__(self, encoder_path):
         super(EncoderModel, self).__init__()
-        self.encoder = torch.load(encoder_path)
+        self.encoder = PretrainedEncoderModel()
+        self.encoder.load_state_dict(torch.load(encoder_path))
+        self.encoder.eval()
 
     def forward(self, stacked_frames):
         return self.encoder(stacked_frames)

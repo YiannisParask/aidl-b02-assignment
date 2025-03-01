@@ -1,17 +1,20 @@
-import random
-import torch
-import torch.optim as optim
-from simple_dqn import QNetwork
+from mb_dqn import DQNModel, load_action_embeddings
 from replay_buffer import ReplayBuffer
+import numpy as np
+import torch
 import torch.nn as nn
 
 
-class Agent:
+class MHCAAgent:
     def __init__(
         self,
-        action_size,
-        device,
-        seed,
+        encoder_path,
+        action_embeddings_path,
+        state_dim=400,
+        action_dim=50,
+        num_heads=4,
+        num_actions=6,
+        device="cuda",
         buffer_size=int(1e5),
         batch_size=64,
         gamma=0.99,
@@ -23,23 +26,8 @@ class Agent:
         update_every=4,
     ):
         """
-        Initialize an Agent object.
-        Args:
-            action_size (int): Dimension of each action.
-            device (torch.device): Device to run the agent on.
-            seed (int): Random seed.
-            buffer_size (int): Size of the replay buffer.
-            batch_size (int): Batch size for training.
-            gamma (float): Discount factor.
-            lr (float): Learning rate.
-            tau (float): Interpolation parameter (0 < tau <= 1).
-            epsilon_start (float): Initial exploration rate.
-            epsilon_end (float): Minimum exploration rate.
-            epsilon_decay (float): Rate at which the exploration rate decays.
-            update_every (int): How often to update the network.
-            t_step (int): Counter for updating the network.
+        MHCA-based Deep Q-Network Agent.
         """
-        self.action_size = action_size
         self.device = device
         self.gamma = gamma
         self.tau = tau
@@ -49,35 +37,54 @@ class Agent:
         self.update_every = update_every
         self.t_step = 0
 
-        # Initialize Q-network and target network
-        self.q_network = QNetwork(action_size, seed).to(device)
-        self.target_network = QNetwork(action_size, seed).to(device)
+        # Load action embeddings
+        action_embeddings = load_action_embeddings(action_embeddings_path).to(device)
+        num_old_actions = action_embeddings.shape[0]
+        action_dim = action_embeddings.shape[1]
+        new_embeddings = torch.randn(num_actions - num_old_actions, action_dim).to(
+            device
+        )
+        updated_action_embeddings = torch.cat(
+            [action_embeddings, new_embeddings], dim=0
+        )
+
+        # MHCA-based Q-network
+        self.q_network = DQNModel(
+            encoder_path,
+            updated_action_embeddings,
+            state_dim,
+            action_dim,
+            num_heads,
+            num_actions,
+        ).to(device)
+        self.target_network = DQNModel(
+            encoder_path,
+            updated_action_embeddings,
+            state_dim,
+            action_dim,
+            num_heads,
+            num_actions,
+        ).to(device)
         self.target_network.load_state_dict(self.q_network.state_dict())
         self.target_network.eval()
 
-        # Replay buffer
         self.replay_buffer = ReplayBuffer(buffer_size, batch_size, device)
-
-        # Optimizer
-        self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.q_network.parameters(), lr=lr)
 
     def act(self, state, epsilon=None):
         """
-        Select an action based on the current state.
-
-        Args:
-            state (np.array): Current state of the environment.
-            epsilon (float): Exploration rate.
-        Returns:
-            action (int): Action to take.
+        Select action using epsilon-greedy strategy.
         """
         epsilon = self.epsilon if epsilon is None else epsilon
-        if random.random() < epsilon:
-            return random.randint(0, self.action_size - 1)
+        if np.random.rand() < epsilon:
+            return np.random.randint(
+                self.q_network.fc[-1].out_features
+            )  # Random action
         else:
             state = state.to(self.device)
             with torch.no_grad():
-                return torch.argmax(self.q_network(state)).item()
+                q_values = self.q_network(state)
+                return torch.argmax(q_values).item()
 
     def step(self, state, action, reward, next_state, done):
         """
@@ -102,25 +109,23 @@ class Agent:
 
     def learn(self):
         """
-        Perform a single step of learning.
+        Train using Multi-Head Cross-Attention (MHCA) and Q-loss.
         """
         states, actions, rewards, next_states, dones = self.replay_buffer.sample()
 
-        q_values = self.q_network(states).gather(1, actions.unsqueeze(1)).view(-1)
+        q_values = self.q_network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
             next_q_values = self.target_network(next_states).max(1)[0]
-            targets = rewards + (self.gamma * next_q_values * (1 - dones))
+        targets = rewards + (self.gamma * next_q_values * (1 - dones))
 
-        # if delta==1, it is equivalent to SmoothL1Loss
-        # loss = nn.MSELoss()(q_values, targets)
-        loss = nn.HuberLoss(reduction="mean", delta=1.0)(q_values, targets)
+        loss = nn.HuberLoss()(q_values, targets)  # Using Huber Loss
         self.optimizer.zero_grad()
         loss.backward()
-
-        nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=1.0)
+        nn.utils.clip_grad_norm_(self.q_network.parameters(), 1)
         self.optimizer.step()
 
+        # Update target network weights with soft update
         self.soft_update(self.q_network, self.target_network)
 
     def soft_update(self, source_model, target_model):

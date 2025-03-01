@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class EncoderModel(nn.Module):
-    def __init__(self, in_channels=3, input_size=(80, 80)):
+    def __init__(self, in_channels=4, input_size=(80, 80)):
         """
         Args:
             in_channels: number of input channels (default=3).:
