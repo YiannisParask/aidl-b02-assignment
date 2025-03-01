@@ -9,7 +9,6 @@ class EncoderModel(nn.Module):
         super(EncoderModel, self).__init__()
         self.encoder = PretrainedEncoderModel()
         self.encoder.load_state_dict(torch.load(encoder_path))
-        self.encoder.eval()
 
     def forward(self, stacked_frames):
         return self.encoder(stacked_frames)
