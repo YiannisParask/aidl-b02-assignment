@@ -5,10 +5,14 @@ from siamese import EncoderModel as PretrainedEncoderModel
 
 
 class EncoderModel(nn.Module):
-    def __init__(self, encoder_path):
+    def __init__(self, encoder_path, freeze=True):
         super(EncoderModel, self).__init__()
-        self.encoder = PretrainedEncoderModel()
+        self.encoder = PretrainedEncoderModel(in_channels=4, input_size=(65, 80))
         self.encoder.load_state_dict(torch.load(encoder_path))
+        if freeze:
+            for param in self.encoder.parameters():
+                param.requires_grad = False  # Freeze encoder weights
+            self.encoder.eval()
 
     def forward(self, stacked_frames):
         return self.encoder(stacked_frames)

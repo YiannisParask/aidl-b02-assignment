@@ -10,7 +10,7 @@ import time
 def save_sas_during_gameplay(env_name, dataset, write_header=False):
     """
     Allows manual gameplay and saves state-action-next_state data to a CSV file.
-    
+
     Args:
         env_name: Name of the environment.
         dataset: Path to the CSV file to save the state-action-next_state data.
@@ -22,7 +22,7 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
     if write_header:
         with open(dataset, "a", newline="") as f:
             writer = csv.writer(f)
-            
+
             # Check if the file is empty, if so, write the header row
             if os.stat(dataset).st_size == 0:
                 writer.writerow(["state", "action", "next_state", "done"])  # Header row
@@ -34,13 +34,17 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
                 state_dir = "../data/states/"
                 os.makedirs(state_dir, exist_ok=True)
 
-                #step_count = len(os.listdir(state_dir)) // 2 
+                # step_count = len(os.listdir(state_dir)) // 2
                 timestamp = int(time.time() * 1000)
                 state_file = os.path.join(state_dir, f"state_{timestamp}_obs_t.png")
-                next_state_file = os.path.join(state_dir, f"state_{timestamp}_obs_tp1.png")
+                next_state_file = os.path.join(
+                    state_dir, f"state_{timestamp}_obs_tp1.png"
+                )
 
                 Image.fromarray(np.uint8(obs_t)).resize((80, 80)).save(state_file)
-                Image.fromarray(np.uint8(obs_tp1)).resize((80, 80)).save(next_state_file)
+                Image.fromarray(np.uint8(obs_tp1)).resize((80, 80)).save(
+                    next_state_file
+                )
 
                 writer.writerow(
                     [state_file, action, next_state_file, terminated or truncated]
@@ -51,11 +55,13 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
 
             play(env, callback=callback, fps=10, zoom=3)
     else:
-        print("Dataset creation is disabled. Starting manual gameplay without recording.")
+        print(
+            "Dataset creation is disabled. Starting manual gameplay without recording."
+        )
         print("Use the 'WASD' to control the agent.")
         print("Press 'ESC' to end the session.")
         play(env, fps=10, zoom=3)
-        
+
     env.close()
 
     if write_header:
@@ -66,6 +72,6 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
 
 if __name__ == "__main__":
     dataset = "../data/dataset.csv"
-    env_name = "FreewayDeterministic-v4"
-    write_header = False
+    env_name = "ALE/MsPacman-v5"
+    write_header = True
     save_sas_during_gameplay(env_name, dataset, write_header)

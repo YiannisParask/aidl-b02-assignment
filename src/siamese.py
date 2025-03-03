@@ -62,17 +62,21 @@ class InverseModel(nn.Module):
         """
         Args:
             encoder_output_dim: Dimensionality of the encoder's output (default=400).
-            num_actions: Number of possible actions (default=3).
+            num_actions: Number of possible actions (default=5).
         """
         super().__init__()
         self.fc1 = nn.Linear(encoder_dim * 2, 256)
         self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, num_actions)
+        self.fc3 = nn.Linear(128, 64)
+        self.fc4 = nn.Linear(64, num_actions)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        x = F.relu(self.fc3(x))
+        x = self.dropout(x)
+        return self.fc4(x)
 
 
 def cross_entropy_loss_function(logits, targets):
