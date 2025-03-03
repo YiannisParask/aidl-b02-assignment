@@ -10,3 +10,6 @@ pillow
 pyvirtualdisplay==0.2.*
 imageio
 seaborn
+scikit-learn
+matplotlib
+pandas
