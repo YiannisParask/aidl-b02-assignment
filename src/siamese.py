@@ -24,7 +24,7 @@ class EncoderModel(nn.Module):
         self.flatten = nn.Flatten()
         self.output_dim = self._compute_output_dim(in_channels, input_size)
         self.fc = nn.Linear(self.output_dim, 400)
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
