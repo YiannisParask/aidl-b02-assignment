@@ -178,3 +178,5 @@ cython_debug/
 *.gif
 *.svg
 *.ico
+*.pdf
+*.txt
