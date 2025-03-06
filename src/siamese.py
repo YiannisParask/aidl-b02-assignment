@@ -24,7 +24,7 @@ class EncoderModel(nn.Module):
         self.flatten = nn.Flatten()
         self.output_dim = self._compute_output_dim(in_channels, input_size)
         self.fc = nn.Linear(self.output_dim, 400)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -79,7 +79,7 @@ class InverseModel(nn.Module):
         return self.fc4(x)
 
 
-def cross_entropy_loss_function(logits, targets):
+def cross_entropy_loss_function(logits, targets, class_weights_tensor):
     """
     Compute the cross entropy loss between the predicted logits and the target labels.
     Args:
@@ -88,5 +88,5 @@ def cross_entropy_loss_function(logits, targets):
         Returns:
         loss: computed loss
     """
-    # Cross Entropy Loss combines LogSoftmax and NLLLoss
-    return nn.CrossEntropyLoss()(logits, targets)
+    # Cross Entropy Loss
+    return nn.CrossEntropyLoss(weight=class_weights_tensor)(logits, targets)
