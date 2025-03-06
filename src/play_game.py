@@ -70,6 +70,7 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
         print("Gameplay session completed without saving data.")
 
 
+# TODO: Make the script to ingnore the first 1000 frames for each session
 if __name__ == "__main__":
     dataset = "../data/dataset.csv"
     env_name = "ALE/MsPacman-v5"
