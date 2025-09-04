@@ -180,3 +180,4 @@ cython_debug/
 *.ico
 *.pdf
 *.txt
+*.pdf

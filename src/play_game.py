@@ -27,7 +27,7 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
             if os.stat(dataset).st_size == 0:
                 writer.writerow(["state", "action", "next_state", "done"])  # Header row
 
-            def callback(obs_t, obs_tp1, action, reward, terminated, truncated, info):
+            def callback(obs_t, obs_tp1, action, reward, terminated, truncated, _):
                 obs_t = obs_t[0] if isinstance(obs_t, tuple) else obs_t
                 obs_tp1 = obs_tp1[0] if isinstance(obs_tp1, tuple) else obs_tp1
 
@@ -41,10 +41,10 @@ def save_sas_during_gameplay(env_name, dataset, write_header=False):
                     state_dir, f"state_{timestamp}_obs_tp1.png"
                 )
 
-                Image.fromarray(np.uint8(obs_t)).resize((80, 80)).save(state_file)
-                Image.fromarray(np.uint8(obs_tp1)).resize((80, 80)).save(
-                    next_state_file
-                )
+                # Image.fromarray(np.uint8(obs_t)).resize((80, 80)).save(state_file)
+                # Image.fromarray(np.uint8(obs_tp1)).resize((80, 80)).save(
+                #     next_state_file
+                # )
 
                 writer.writerow(
                     [state_file, action, next_state_file, terminated or truncated]
